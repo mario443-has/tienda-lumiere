@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{# Cargar el filtro humanize para intcomma #}
+{% block title %}{{ producto.nombre }} - Lumiere Glamour{% endblock %}
+{% block content %}
+    <!-- Main Content - Product Detail -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Breadcrumbs -->
+        <nav class="text-sm text-gray-600 mb-6 overflow-x-auto">
+            <ol class="list-none p-0 flex flex-wrap gap-y-1">
+                <li class="flex items-center">
+                    <a href="{% url 'home' %}" class="text-pink-600 hover:underline">Inicio</a>
+                    <span class="mx-2">/</span>
+                </li>
+                {% if producto.categoria %}
+                    <li class="flex items-center">
+                        <a href="{% url 'categoria' producto.categoria.slug %}"
+                           class="text-pink-600 hover:underline">{{ producto.categoria.nombre }}</a>
+                        <span class="mx-2">/</span>
+                    </li>
+                {% endif %}
+                <li class="text-gray-800 font-semibold break-words">{{ producto.nombre }}</li>
+            </ol>
+        </nav>
+        <div class="bg-white rounded-lg shadow-xl p-6 flex flex-col md:flex-row gap-8">
+            <!-- Product Image Section -->
+            <div class="md:w-1/2 flex flex-col items-center">
+                <div class="w-full max-w-md h-64 sm:h-80 md:h-96 flex items-center justify-center overflow-hidden rounded-lg shadow-md mb-4">
+                    {# Usar get_primary_image_url para la imagen principal #}
+                    <img src="{{ producto.get_primary_image_url|default:'https://placehold.co/400x400/cccccc/333333?text=Producto' }}"
+                         alt="{{ producto.nombre }}"
+                         class="max-w-full max-h-full object-contain"
+                         id="main-product-image"
+                         onerror="this.onerror=null;this.src='https://placehold.co/400x400/cccccc/333333?text=Producto';">
+                </div>
+                <!-- Thumbnail Images -->
+                <div class="flex space-x-2 mt-2 overflow-x-auto pb-2 w-full max-w-md">
+                    {# Muestra la imagen principal como miniatura si existe #}
+                    {% if producto.imagen %}
+                        <img src="{{ producto.imagen.url|default:'https://placehold.co/64x64/cccccc/333333?text=Miniatura' }}"
+                             alt="{{ producto.nombre }} principal"
+                             class="thumbnail-image w-16 h-16 object-cover rounded-md border border-gray-300 cursor-pointer hover:border-pink-500 transition {% if not producto.images.all %}ring-2 ring-pink-500{% endif %}"
+                             onerror="this.onerror=null;this.src='https://placehold.co/64x64/cccccc/333333?text=Miniatura';">
+                    {% endif %}
+                    {# Itera sobre las imágenes adicionales del producto #}
+                    {% for img in producto.images.all %}
+                        {% if img.image %}
+                            {# Validar si la imagen existe #}
+                            <img src="{{ img.image.url }}"
+                                 alt="{{ img.alt_text|default:producto.nombre }}"
+                                 class="thumbnail-image w-16 h-16 object-cover rounded-md border border-gray-300 cursor-pointer hover:border-pink-500 transition {% if forloop.first and not producto.imagen %}ring-2 ring-pink-500{% endif %}"
+                                 onerror="this.onerror=null;this.src='https://placehold.co/64x64/cccccc/333333?text=Miniatura';">
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            <!-- Product Details Section -->
+            <div class="md:w-1/2 flex flex-col">
+                <div class="flex justify-between items-start gap-3 mb-3">
+                    <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 flex-1 min-w-0 break-words">{{ producto.nombre }}</h1>
+                    <button type="button"
+                            class="btn-favorito bg-white p-2 rounded-full shadow hover:bg-gray-100 transition {% if is_favorito %}active{% endif %}"
+                            data-product-id="{{ producto.id }}"
+                            aria-label="{% if is_favorito %}Quitar de favoritos{% else %}Añadir a favoritos{% endif %}"
+                            title="{% if is_favorito %}Quitar de favoritos{% else %}Añadir a favoritos{% endif %}">
+                        <i class="{% if is_favorito %}fa-solid fa-heart text-red-500{% else %}fa-regular fa-heart text-gray-500{% endif %}"></i>
+                    </button>
+                </div>
+                <div class="flex flex-wrap items-baseline gap-2 mb-4">
+                    {# Mostrar el precio final del producto #}
+                    <span class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-pink-600">${{ producto.get_precio_final|floatformat:0|intcomma }}</span>
+                    {# Mostrar el precio original tachado si hay descuento #}
+                    {% if producto.descuento > 0 %}
+                        <span class="text-xl text-gray-500 line-through">${{ producto.precio|floatformat:0|intcomma }}</span>
+                    {% endif %}
+                </div>
+                <p class="text-gray-700 mb-6 leading-relaxed">
+                    {{ producto.descripcion|default_if_none:"No hay descripción disponible." }}
+                </p>
+                <div class="flex items-center space-x-4 mb-8">
+                    <label for="quantity" class="text-lg font-medium text-gray-700">Cantidad:</label>
+                    <input type="number"
+                           id="quantity"
+                           value="1"
+                           min="1"
+                           class="w-20 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500 text-center">
+                </div>
+                <!-- Lógica de Variaciones (Colores/Tonos) -->
+                {% if variaciones %}
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">Opciones:</h3>
+                        {# Agrupar variaciones por tipo (ej. "Color", "Tono", "Presentación") #}
+                        {% regroup variaciones by nombre as variacion_tipos %}
+                        {% for tipo in variacion_tipos %}
+                            <div class="mb-4">
+                                <p class="font-medium text-gray-700 mb-2">{{ tipo.grouper }}:</p>
+                                <div class="flex flex-wrap gap-2">
+                                    {% for var in tipo.list %}
+                                        <button class="color-option relative w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center cursor-pointer hover:border-pink-500 transition-all duration-200 {% if forloop.first %}selected{% endif %}"
+                                                style="{% if var.color_hex %}background-color: {{ var.color_hex }};
+                                                       {% else %}background-color: #f0f0f0;
+                                                       {% endif %}"
+                                                data-variant-id="{{ var.id }}"
+                                                data-color-name="{{ var.color|default:var.valor }}"
+                                                data-variant-image="{{ var.imagen.url|default:producto.get_primary_image_url }}"
+                                                data-variant-price="{{ var.precio_final|floatformat:2 }}"
+                                                title="{{ var.valor }}">
+                                            {# Si no hay color_hex, mostrar el texto del valor #}
+                                            {% if not var.color_hex %}
+                                                <span class="text-xs font-semibold text-gray-800">{{ var.valor|slice:":2" }}</span>
+                                            {% endif %}
+                                            {% if forloop.first %}
+                                                <i class="fas fa-check-circle absolute -bottom-1 -right-1 text-pink-600 bg-white rounded-full"></i>
+                                            {% endif %}
+                                        </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <!-- Botón para añadir productos al carrito -->
+                <button class="btn-agregar-carrito w-full bg-pink-600 text-white py-4 px-6 rounded-lg font-semibold text-xl hover:bg-pink-700 transition duration-300 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl"
+                    data-product-id="{{ producto.id }}"
+                    data-product-name="{{ producto.nombre }}"
+                    data-product-price="{{ producto.get_precio_final|floatformat:2 }}"
+                    data-selected-variant-id="{% if variaciones %}{{ variaciones.0.id }}{% else %}{{ producto.id }}{% endif %}"
+                    data-selected-color="{% if variaciones %}{{ variaciones.0.color|default:variaciones.0.valor }}{% else %}N/A{% endif %}"
+                    data-product-image-url="{% if variaciones and variaciones.0.imagen %}{{ variaciones.0.imagen }}{% else %}{{ producto.get_primary_image_url }}{% endif %}"
+                    aria-label="Añadir {{ producto.nombre }} al carrito"
+                    title="Añadir al carrito">
+                    <i class="fas fa-cart-plus text-2xl"></i>
+                    <span>Añadir al Carrito</span>
+                </button>
+                <!-- Información adicional (puedes hacerla configurable con SiteSetting si quieres) -->
+                <div class="mt-8 border-t border-gray-200 pt-6">
+                    <p class="text-gray-700 text-sm mb-2">
+                        <i class="fas fa-check-circle text-green-500 mr-2"></i> Producto disponible para envío inmediato.
+                    </p>
+                    <p class="text-gray-700 text-sm">
+                        <i class="fas fa-truck text-blue-500 mr-2"></i> Envío gratis en pedidos superiores a $X.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <!-- Full Description Section -->
+        <div class="bg-white rounded-lg shadow-xl p-6 mt-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Conoce más sobre {{ producto.nombre }}</h2>
+            <div class="prose max-w-none text-gray-700 leading-relaxed ck-content">
+                {# Muestra la descripción larga si existe, de lo contrario, la descripción corta #}
+                {% if producto.long_description %}
+                    {{ producto.long_description|safe }} {# Usar 'safe' para renderizar HTML de RichTextField #}
+                {% else %}
+                    <p>{{ producto.descripcion|default_if_none:"No hay descripción detallada disponible." }}</p>
+                {% endif %}
+            </div>
+        </div>
+        <!-- Social Sharing Section -->
+        <div class="bg-white rounded-lg shadow-xl p-6 mt-8 text-center">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Compártelo en:</h2>
+            <div class="flex justify-center space-x-6">
+                <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}"
+                   target="_blank"
+                   class="text-blue-600 hover:text-blue-800 transition transform hover:scale-110"
+                   title="Compartir en Facebook"
+                   aria-label="Compartir en Facebook">
+                    <i class="fab fa-facebook-square text-4xl"></i>
+                </a>
+                <a href="https://wa.me/?text={{ producto.nombre|urlencode }}%20-%20Mira%20este%20producto%3A%20{{ request.build_absolute_uri|urlencode }}"
+                   target="_blank"
+                   class="text-green-500 hover:text-green-700 transition transform hover:scale-110"
+                   title="Compartir en WhatsApp"
+                   aria-label="Compartir en WhatsApp">
+                    <i class="fab fa-whatsapp-square text-4xl"></i>
+                </a>
+            </div>
+        </div>
+    </main>
+{% endblock %}

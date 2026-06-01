@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Mis Favoritos - Lumiere Glamour{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold text-gray-900 mb-8 text-center">Mis Productos Favoritos</h1>
+
+  <div id="favoritos-container" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6{% if not favoritos_productos %} hidden{% endif %}">
+    {% for producto in favoritos_productos %}
+      {% include 'store/components/product_card.html' with producto=producto favoritos_ids=favoritos_ids %}
+    {% endfor %}
+  </div>
+
+  <div id="favoritos-empty" class="bg-white rounded-lg shadow-md p-8 text-center{% if favoritos_productos %} hidden{% endif %}">
+    <p class="text-xl text-gray-600 mb-4">
+      No tienes productos favoritos aún. ¡Explora y añade algunos!
+    </p>
+    <a href="{% url 'home' %}" class="text-pink-600 hover:underline font-medium">
+      Volver a la tienda
+    </a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{
+  "name": "lumiere_glamour",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tailwindcss -i ./static/css/main.css -o ./static/css/output.css --watch",
+    "build": "tailwindcss -i ./static/css/main.css -o ./static/css/output.css --minify",
+    "update-browsers": "npx update-browserslist-db@latest --force",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17"
+  },
+  "dependencies": {
+    "browserslist": "^4.25.1",
+    "electron-to-chromium": "^1.5.197",
+    "escalade": "^3.2.0",
+    "fraction.js": "^4.3.7",
+    "nanoid": "^3.3.11",
+    "node-releases": "^2.0.19",
+    "normalize-range": "^0.1.2",
+    "picocolors": "^1.1.1",
+    "postcss-value-parser": "^4.2.0",
+    "source-map-js": "^1.2.1",
+    "update-browserslist-db": "^1.1.3"
+  }
+}
